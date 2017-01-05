@@ -1,12 +1,13 @@
 ---
 title: "Statistical Tests"
 output:
-  pdf_document: default
+  html_document: default
   html_notebook: default
+  pdf_document: default
 ---
 
 ```{r global_options, include = F}
-knitr::opts_chunk$set(fig.width = 10, fig.height = 6,
+knitr::opts_chunk$set(fig.width = 12, fig.height = 8,
                       warning = F, message = F, fig.path = 'figs_tests/')
 ```
 
@@ -24,21 +25,17 @@ library(broom)
 source('../helpers.R')
 
 # already filtered to only interesting divisions
-stops <- read_rds('../../processed_data/prepared_stops.rds')
+stops <- read_rds('../../processed_data/filt_stops.rds')
 # filter to only BLACKS, ASIANS, HISPANICS, and WHITES
 # only during INTERTWILIGHT TIME
 # only VEHICLE STOPS
-races_for_analysis <- c("BLACK","HISPANIC","WHITE")
 
 filt_stops <- stops %>%
   filter(
-    DESCENT_DESC %in% races_for_analysis,
-    is_intertwilight,
-    STOP_TYPE == 'Vehicle Stop',
     !weekdays(STOP_DT) %in% c('Saturday', 'Sunday')
   )
 
-dim(filt_stops) # 40k stops
+dim(filt_stops) # ~ 43k stops
 ```
 
 ## Group the data 
@@ -81,10 +78,11 @@ hispanic_p <- race_diffs %>%
 
 
 Note: Divisions that stop more often during visible hours are at the top.
-```{r, proportional_diff_test_plot}
+```{r, proportional_diff_test_plot, dev = 'png'}
 prop_diff_plot <- grid.arrange(
   white_p, black_p, hispanic_p, nrow = 1,
-  top = "Differences in Proportion of Night Stops - Day Stops"
+  top = "Differences in Proportion of Night Stops - Day Stops", 
+  bottom = 'Divisions at the top stop more during visible hours than non-visible'
 )
 ```
 
@@ -105,13 +103,16 @@ hisp_plot <- gen_race_prop_test_plot(hisp_prop_tests, 'hispanic_stops', 'Hispani
 ```
 
 
-Again, Divisions listed near the top show significant p values; That is, the blue divisions would be divisions that we would want to analze more closely for appearances of police
-```{r, p_value_results}
-grid.arrange(white_plot, black_plot, hisp_plot,
-             nrow = 1, top = "P Value Distributions")
+Again, Divisions listed near the top show significant p values; That is, the blue divisions would be divisions that we would want to analze more closely for appearances of racial discrimination.
+```{r, p_value_results, dev='png'}
+grid.arrange(
+  white_plot, black_plot, hisp_plot,
+  nrow = 1, top = "P Value Distributions",
+  bottom = 'Divisions near the top have the smallest, most significant p values'
+)
 ```
 
-```{r, bonferroni_divs}
+```{r, bonferroni_divs, dev = 'png'}
 white_df <- white_prop_tests %>%
   select(division, race, p.value) %>%
   mutate(is_bonferroni_significant = p.value < 0.05 / length(unique(division)))
@@ -127,22 +128,23 @@ hisp_df <- hisp_prop_tests %>%
 bonferroni_divisions <- bind_rows(white_df, black_df, hisp_df) %>%
   filter(is_bonferroni_significant) %>%
   select(-is_bonferroni_significant) %>%
-  arrange(p.value)
-
-bonferroni_divisions %>%
+  arrange(p.value) %>%
   mutate(division = fct_reorder(division, p.value),
          race = fct_recode(race,
            blacks = 'black_stops',
            whites = 'white_stops',
-           hispanics = 'hispanic_stops')
-        ) %>%
+           hispanics = 'hispanic_stops'))
+
+bonferroni_divisions %>%
   ggplot(aes(division, p.value, fill = race)) + 
   geom_bar(stat = 'identity', color = 'black') + 
   theme_bw() + 
   theme(legend.position = 'bottom', legend.title = element_blank()) +
   coord_flip() + 
   scale_y_continuous(trans = 'log10') + 
-  labs(x = '', y = 'log10(p value)', 
-       title = 'Whites in Traffic Divisions Would Appear the Most Targeted', subtitle = 'smaller, more significant p values --> larger, less significant p values')
+  labs(
+    x = '', y = 'log10(p value)', 
+       title = 'Whites in Traffic Divisions Would Appear the Most Targeted', 
+    subtitle = 'smaller, more significant p values <--> larger, less significant p values')
 ```
 

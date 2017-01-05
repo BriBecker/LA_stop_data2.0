@@ -1,13 +1,14 @@
 ---
 title: "Stop Data Analysis 1"
 output:
-  pdf_document: default
+  html_document: default
   html_notebook: default
+  pdf_document: default
 ---
 
 
 ```{r global_options, include = F}
-knitr::opts_chunk$set(fig.width = 7, fig.height = 5,
+knitr::opts_chunk$set(fig.width = 12, fig.height = 8,
                       warning = F, message = F, fig.path = 'figs_analysis_1/')
 ```
 
@@ -28,7 +29,7 @@ stops <- read_rds('../../processed_data/prepared_stops.rds')
 # Exploratory Plots
 
 ## All Stops Breakdown by Race, Sex, and Stop Type
-```{r, exp_plot1}
+```{r, sex_and_race, dev = 'png'}
 rst_break <- stops %>%
   group_by(DESCENT_DESC, PERSN_GENDER_CD, STOP_TYPE) %>%
   summarize(num_stops = n()) %>%
@@ -55,7 +56,7 @@ rst_break %>%
 
 ## All Stop Breakdown by Selected Division
 There are 52 divisions present in the data, but we'll look at the XXXX interesting ones.
-```{r, exp_plot2}
+```{r, div_race_breakdown, dev = 'png'}
 # filter to divisions we will test later
 area_divs <- c(
   'CENTRAL', 'HOLLENBECK', 'NEWTON', 'NORTH EAST', 'RAMPART',
@@ -121,7 +122,7 @@ div_break %>%
 
 
 ## Noon Crime Peaks?
-```{r noon_crime_peaks}
+```{r noon_crime_peaks, dev = 'png'}
 stop_hours <- stops %>%
   mutate(
     stop_hour = floor(as.numeric(STOP_TM) / 60 / 60)

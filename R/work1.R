@@ -31,3 +31,52 @@ stops_with_sun <- left_join(
 )
 
 write_rds(stops_with_sun, 'processed_data/stops_with_sun.rds')
+
+# filter to divisions we will test later ----
+stops <- stops_with_sun %>%
+  mutate(
+    STOP_TM = as.numeric(STOP_TM),
+    Sunrise = as.numeric(Sunrise),
+    Sunset = as.numeric(Sunset),
+    day_length_secs = as.numeric(day_length_secs),
+    # clean up labels
+    PERSN_GENDER_CD = fct_recode(
+      PERSN_GENDER_CD,
+      Male = 'M', Female = 'F'
+    ),
+    STOP_TYPE = fct_recode(
+      STOP_TYPE, 
+      `Vehicle Stop` = 'VEH', `Pedestrian Stop` = 'PED' 
+    )
+)
+
+# get earliest/latest sunset times
+(min_max_sunsets <- get_min_max_dates(stops))
+
+# thus, intertwilight time is between
+# 16:43:31 - 20:08:30
+stops <- stops %>%
+  mutate_is_intertwilight(min_max_sunsets) %>%
+  mutate_is_daylight()
+
+# filter to these stops
+filt_stops <- stops %>%
+  filter(
+    DIV1_DESC %in% selected_divs,
+    DESCENT_DESC %in% races_for_analysis,
+    is_intertwilight,
+    STOP_TYPE == 'Vehicle Stop',
+    !weekdays(STOP_DT) %in% c('Saturday', 'Sunday')
+  )
+
+write_rds(filt_stops, 'processed_data/prepared_stops.rds')
+
+
+
+# tmp
+check_stops <- filt_stops %>%
+  select(DIV1_DESC, STOP_DT, STOP_TM, Sunrise, Sunset, contains('is_'),
+         everything())
+  
+check_stops %>%
+  datatable()

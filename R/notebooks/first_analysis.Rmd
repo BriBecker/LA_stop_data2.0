@@ -7,8 +7,8 @@ output:
 
 
 ```{r global_options, include = F}
-knitr::opts_chunk$set(fig.width = 10, fig.height = 6,
-                      warning = F, message = F, fig.path = 'R/notebooks/figs')
+knitr::opts_chunk$set(fig.width = 7, fig.height = 5,
+                      warning = F, message = F, fig.path = 'figs_analysis_1/')
 ```
 
 ```{r load_data_setup, message = F}
@@ -22,27 +22,7 @@ library(lubridate)
 source('../../R/helpers.R')
 
 # thanks to notebooks default working directory >.<
-stops <- read_rds('../../processed_data/stops_with_sun.rds') %>%
-  mutate(
-    # clean up labels
-    PERSN_GENDER_CD = fct_recode(
-      PERSN_GENDER_CD,
-        Male = 'M', Female = 'F'
-    ),
-    STOP_TYPE = fct_recode(
-      STOP_TYPE, 
-        `Vehicle Stop` = 'VEH', `Pedestrian Stop` = 'PED' 
-    )
-  )
-
-# get earliest/latest sunset times
-(min_max_sunsets <- get_min_max_dates(stops))
-
-# thus, intertwilight time is between
-# 16:43:31 - 20:08:30
-stops <- stops %>%
-  mutate_intertwilight(min_max_sunsets) %>%
-  mutate_daylight()
+stops <- read_rds('../../processed_data/prepared_stops.rds')
 ```
 
 # Exploratory Plots
@@ -78,7 +58,7 @@ There are 52 divisions present in the data, but we'll look at the XXXX interesti
 ```{r, exp_plot2}
 # filter to divisions we will test later
 area_divs <- c(
-  'CENTRAL', 'HOLLENBECK', 'NEWTON', 'NORTHEAST', 'RAMPART',
+  'CENTRAL', 'HOLLENBECK', 'NEWTON', 'NORTH EAST', 'RAMPART',
   'SEVENTY-SEVENTH', 'HARBOR', 'SOUTHEAST', 'SOUTHWEST',
   'DEVONSHIRE', 'FOOTHILL', 'MISSION', 'NORTH HOLLYWOOD', 'VAN NUYS',
     'WEST VALLEY', 'TOPANGA',
@@ -122,19 +102,38 @@ div_break %>%
 
 ## All Stops Over Time by Race and Division
 ```{r, exp_plot3_time}
-div_time_break <- stops %>%
-  group_by(DIV1_DESC, DESCENT_DESC, stop_month = month(STOP_DT, T)) %>%
-  summarize(num_stops = n())
+# div_time_break <- stops %>%
+#   group_by(DIV1_DESC, DESCENT_DESC, stop_month = month(STOP_DT, T)) %>%
+#   summarize(num_stops = n())
+# 
+# div_time_break %>%
+#   ggplot(aes(stop_month, num_stops, color = DESCENT_DESC, group = 1)) + 
+#   geom_line() + 
+#   theme_bw() + 
+#   facet_grid(DIV1_DESC~ DESCENT_DESC, scales = 'free') +
+#   theme(legend.position = 'bottom') + 
+#   scale_color_manual(values = race_colors) + 
+#   theme(axis.text.x = element_text(angle = 30)) + 
+#   labs(
+#     y = "Number of Stops"
+#   )
+```
 
-div_time_break %>%
-  ggplot(aes(stop_month, num_stops, color = DESCENT_DESC, group = 1)) + 
+
+## Noon Crime Peaks?
+```{r noon_crime_peaks}
+stop_hours <- stops %>%
+  mutate(
+    stop_hour = floor(as.numeric(STOP_TM) / 60 / 60)
+  ) %>%
+  group_by(stop_hour, STOP_TYPE) %>%
+  summarize(num_stops_per_hour = n() / length(unique(STOP_DT)))
+
+stop_hours %>%
+  ggplot(aes(stop_hour, num_stops_per_hour)) + 
   geom_line() + 
+  facet_grid(~ STOP_TYPE) + 
   theme_bw() + 
-  facet_grid(DIV1_DESC~ DESCENT_DESC, scales = 'free') +
-  theme(legend.position = 'bottom') + 
-  scale_color_manual(values = race_colors) + 
-  theme(axis.text.x = element_text(angle = 30)) + 
-  labs(
-    y = "Number of Stops"
-  )
+  labs(x = 'Hour of Day', y = 'Average Number of Stops per Hour',
+       title = 'Vehicle Stops Peak at Morning Rush Hour and Late Evenings')
 ```

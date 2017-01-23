@@ -24,6 +24,14 @@ source('../../R/helpers.R')
 
 # thanks to notebooks default working directory >.<
 stops <- read_rds('../../processed_data/prepared_stops.rds')
+
+# remove me ----
+race_breakdown <- stops %>%
+  group_by(DESCENT_DESC) %>%
+  summarize(count = n()) %>%
+  mutate(stop_percent = count / sum(count) * 100) %>%
+  arrange(desc(stop_percent))
+race_breakdown
 ```
 
 # Exploratory Plots

@@ -6,3 +6,6 @@ Los Angeles police stop data was originally downloaded from [data.lacity.org](ht
 Los Angeles sunset/sunrise times have been acquired from http://sunrise.maplogs.com/los_angeles_county_ca_usa.926.html (most recently as of 2016-12-14).
 
 For convenience, LA Police Stop data (zipped) and sunset data is contained in *raw_data* directory.
+
+## Interesting National Link
+https://publicsafetydataportal.org/stops-citations-and-arrests-data/

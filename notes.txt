@@ -1,0 +1,48 @@
+-----
+https://www.academia.edu/3129189/Testing_for_Racial_Profiling_with_the_Veil-of-Darkness_Method?auto=download
+file:///C:/Users/Brian/Downloads/Testing_for_Racial_Profiling_with_the_Ve%20(2).pdf
+
+The basic idea is
+to use changes in natural lighting to establish a benchmark, on the assumption that
+after dark, police officers suffer a degraded ability to detect motorists’ race; the pattern
+of stops during darkness represents the presumptively more race-neutral benchmark,
+against which the pattern of stops during daytime can be compared
+
+
+. The comparison is
+limited to stops that occur “near the boundary of daylight and darkness,” in what has
+been called the “intertwilight” period, lest the analysis confound differences in officers’
+decisions to stop with changes in the composition of the driving (and violator)
+population across the hours of the day
+
+
+----
+https://www.maxwell.syr.edu/news.aspx?id=152471340646
+# his paper
+https://www.colgate.edu/docs/default-source/default-document-library/horracerohlindarkness-1-14-14.pdf?sfvrsn=0
+
+ If a higher percentage of blacks are stopped during the day than at night, it is reasoned, then bias exists.
+
+STREETLIGHT INFO
+He and Rohlin used geographic information system software and, using data from 512 Syracuse police officers’ 
+records from 2006 to 2009, they correlated traffic stops with the location of city streetlights. When they
+ contrasted well-lit night-time locations with those having little or no ambient lighting, they again found
+ significant patterns suggesting that, when the race of vehicle occupants is known, bias exists. 
+The odds of a black driver being stopped, relative to nonblack drivers, increases 15 percent in lighted situations.
+
+TRAINING/EXP FIXES BIAS
+One preliminary finding is that rookie officers (those with five years’ experience or less), 
+when unaccompanied by an experienced officer, stop and search innocent black citizens at a 
+disproportionately high rate. Further analysis suggests racial bias fades with experience. 
+
+Their methodology "differences out" the at-risk population of drivers by assuming that
+the racial mix of the at-risk population does not change between daylight and darkness. Of course this
+assumption will not hold in general (Hammermesh, 1996). To ensure that it does, they focus their analysis
+on stops made during the intertwilight period (approximately 5:00pm to 9:30pm), during which it may be
+either dark or light depending on the time of year due to the daylight savings time change.
+
+ However, this
+may not be enough of a refinement to ensure that the racial mix of the at-risk population does not change
+between daylight and darkness. They, therefore, treat time as continuous and embed the profiling test into
+a logistical regression, allowing for a test that conditions on the time of day, and consequently refines the
+precision of the equality of at-risk populations between day and night.

@@ -6,6 +6,7 @@ output:
   pdf_document: default
 ---
 
+
 ```{r global_options, include = F}
 knitr::opts_chunk$set(fig.width = 12, fig.height = 8,
                       warning = F, message = F, fig.path = 'figs_tests/')
@@ -21,6 +22,7 @@ library(forcats)
 library(lubridate)
 library(gridExtra)
 library(broom)
+library(caret)
 
 source('../helpers.R')
 
@@ -80,7 +82,7 @@ hispanic_p <- race_diffs %>%
 Note: Divisions that stop more often during visible hours are at the top.
 ```{r, proportional_diff_test_plot, dev = 'png'}
 prop_diff_plot <- grid.arrange(
-  white_p, black_p, hispanic_p, nrow = 1,
+  black_p, hispanic_p, white_p, nrow = 1,
   top = "Differences in Proportion of Night Stops - Day Stops", 
   bottom = 'Divisions at the top stop more during visible hours than non-visible'
 )
@@ -106,7 +108,7 @@ hisp_plot <- gen_race_prop_test_plot(hisp_prop_tests, 'hispanic_stops', 'Hispani
 Again, Divisions listed near the top show significant p values; That is, the blue divisions would be divisions that we would want to analze more closely for appearances of racial discrimination.
 ```{r, p_value_results, dev='png'}
 grid.arrange(
-  white_plot, black_plot, hisp_plot,
+  black_plot, hisp_plot, white_plot,
   nrow = 1, top = "P Value Distributions",
   bottom = 'Divisions near the top have the smallest, most significant p values'
 )
@@ -148,3 +150,83 @@ bonferroni_divisions %>%
     subtitle = 'smaller, more significant p values <--> larger, less significant p values')
 ```
 
+
+# Logistic Regression -----
+```{r, prep_log_reg}
+hour_min_labels <- c(
+  "4:44 - 5:04", "5:04 - 5:25", "5:25 - 5:45", "5:45 - 6:05", 
+  "6:05 - 6:26", "6:26 - 6:46", "6:46 - 7:07", 
+  "7:07 - 7:27", "7:27 - 7:47", "7:47 - 8:08"
+)
+lr_stops <- filt_stops %>%
+  mutate(
+    stop_time_hour = STOP_TM / 3600, 
+    stop_time_group = cut(stop_time_hour, breaks = 10, 
+                          labels = hour_min_labels),
+    is_black = DESCENT_DESC == 'BLACK',
+    is_hispanic = DESCENT_DESC == 'HISPANIC',
+    is_white = DESCENT_DESC == 'WHITE'
+  )
+
+lr_group <- lr_stops %>%
+  group_by(is_daylight, stop_time_group) %>%
+  summarize(
+    total_stops = n(),
+    black_stops = sum(is_black),
+    hisp_stops = sum(is_hispanic),
+    white_stops = sum(is_white)
+  ) %>%
+  mutate(
+    black_percent = black_stops / total_stops,
+    hisp_percent = hisp_stops / total_stops,
+    white_percent = white_stops / total_stops
+  )
+
+# green = blacks, brown = hispanics, orange = whites
+lr_group %>%
+  ggplot(aes(stop_time_group, group = is_daylight, linetype = is_daylight)) + 
+  geom_line(aes(y = black_percent), color = '#3E5641',
+            size = 1.2, show.legend = F) +
+  geom_line(aes(y = hisp_percent), color = '#A24936',
+            size = 1.2, show.legend = F) +
+  geom_line(aes(y = white_percent), color = '#D36135',
+            size = 1.2, show.legend = F) +
+  theme_bw() + 
+  labs(x = '', y = 'Percentage of Stops',
+       title = 'Stop Percentages in Daylight and Darkness in Inter-Twilight Period',
+       subtitle = 'Solid Lines: Night %,       Dashed Lines: Day %') +
+  scale_y_continuous(limits = c(0, 1), label = scales::percent) + 
+  geom_label(aes('5:25 - 5:45', .57, label = 'Hispanic Motorists'),
+             nudge_x = .5) +
+  geom_label(aes('6:26 - 6:46', .35, label = 'Black Motorists'),
+             nudge_x = .5) + 
+  geom_label(aes('7:27 - 7:47', .12, label = 'White Motorists'),
+             nudge_x = 0)
+```
+
+## Test Logistic Regression
+```{r, log_regression_perf}
+lr_ok <- lr_stops %>%
+  mutate(
+    is_black = as.factor(ifelse(is_black, 'black', 'not black')),
+    is_hispanic = ifelse(is_hispanic, 'hispanic', 'not hispanic'),
+    is_white = ifelse(is_white, 'white', 'not white'),
+    is_daylight = ifelse(is_daylight, 'visible', 'not visible')
+  )
+set.seed(999)
+lr_train_index <- 
+  createDataPartition(lr_ok$is_black, list = F, p = 0.7)
+lr_train <- lr_ok[lr_train_index, ]
+lr_test <- lr_ok[-lr_train_index, ]
+
+black_model <- glm(
+  is_black ~ is_daylight + stop_time_group,
+  data = lr_ok, family = binomial(link = 'logit')
+)
+summary(black_model)
+
+lr_test_probs <- 
+  predict(black_model, newdata = lr_test, type = 'response')
+lr_test_preds <- ifelse(lr_test_probs > 0.72, 'black', 'not black')
+confusionMatrix(lr_test_preds, lr_test$is_black, positive = 'black')
+```

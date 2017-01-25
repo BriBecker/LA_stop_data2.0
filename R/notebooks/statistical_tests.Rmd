@@ -91,6 +91,29 @@ prop_diff_plot <- grid.arrange(
 ## Perform Proportion Test
 $H_a$: Day Proportion > Night Proportion
 
+The entire set of 25 divisions:
+```{r, total_test}
+total_df <- race_sum %>% 
+  ungroup() %>% 
+  group_by(is_daylight) %>% 
+  summarize(
+    total_stops = sum(total_stops),
+    white_stops = sum(white_stops),
+    black_stops = sum(black_stops),
+    hispanic_stops = sum(hispanic_stops)
+  ) %>%
+  mutate(
+    white_percent = white_stops / total_stops,
+    black_percent = black_stops / total_stops,
+    hispanic_percent = hispanic_stops / total_stops
+  )
+
+total_df %>%
+  prop_test_all('black_stops')
+purrr::map_df(c('white_stops','black_stops','hispanic_stops'),
+              prop_test_all, total_df = total_df)
+```
+
 ```{r, one_sided_prop_test}
 white_prop_tests <- prop_test_all_divs(race_sum, 'white_stops') %>%
   mutate(is_significant = p.value < 0.05)

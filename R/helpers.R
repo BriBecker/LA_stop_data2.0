@@ -99,3 +99,13 @@ prop_test_all_divs <- function(race_df, race_diff_string) {
   bind_rows(race_results) %>%
     bind_cols(identifier_cols)
 }
+
+prop_test_all <- function(total_df, race_string) {
+  tidy(
+    prop.test(
+      x = total_df[[race_string]],
+      n = total_df[['total_stops']],
+      alternative = 'less'
+    )
+  )
+}
